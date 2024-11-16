@@ -1,0 +1,30 @@
+{
+  "project_info": {
+    "project_number": "205499780478",
+    "firebase_url": "https://studentgrievanceapp-default-rtdb.firebaseio.com",
+    "project_id": "studentgrievanceapp",
+    "storage_bucket": "studentgrievanceapp.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:205499780478:android:a26e35457aeb24fc7d372f",
+        "android_client_info": {
+          "package_name": "com.company.student"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyA1DfZA6aHKIuXLMXyRyjSuBux4YlYgWtY"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
