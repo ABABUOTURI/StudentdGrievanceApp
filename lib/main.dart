@@ -6,6 +6,7 @@ import 'package:studentgrievanceapp/Auth/Getstarted.dart';
 import 'package:studentgrievanceapp/Auth/Login.dart';
 import 'package:studentgrievanceapp/Auth/Register.dart';
 import 'package:studentgrievanceapp/Auth/Resetpass.dart';
+import 'package:studentgrievanceapp/Models/grievance_submission.dart';
 import 'package:studentgrievanceapp/Models/user.dart';
 import 'package:studentgrievanceapp/students/Academic.dart';
 import 'package:studentgrievanceapp/students/Administration.dart';
@@ -15,22 +16,19 @@ import 'package:studentgrievanceapp/students/Notification.dart';
 import 'package:studentgrievanceapp/students/grievancereviewstud.dart';
 import 'package:studentgrievanceapp/students/submitgrievance.dart';
 
-import 'Models/grievance.dart';
-
-
 void main() async {
-  WidgetsFlutterBinding.ensureInitialized(); // Ensures all bindings are initialized
+  WidgetsFlutterBinding.ensureInitialized();
 
-  // Initialize Hive and Hive Flutter
-  await Hive.initFlutter(); 
-  Hive.registerAdapter(UserAdapter()); // Register Hive adapter for the User model
-  //Hive.registerAdapter(GrievanceSubmissionAdapter()); // For tracking grievance progress
-  //Hive.registerAdapter(GrievanceAdapter());
+  // Initialize Hive
+  await Hive.initFlutter();
 
-  // Open the Hive box (this will be used to store user data)
-  await Hive.openBox<User>('userBox'); 
-  //await Hive.openBox<GrievanceSubmission>('grievanceSubmissionBox');
-  //await Hive.openBox<Grievance>('grievanceBox');
+  // Register Hive adapters
+  Hive.registerAdapter(UserAdapter());
+  Hive.registerAdapter(GrievanceSubmissionAdapter());
+
+  // Open required Hive boxes
+  await Hive.openBox<User>('userBox');
+  await Hive.openBox<GrievanceSubmission>('grievanceSubmissionBox');
 
   runApp(const MyApp());
 }
@@ -50,18 +48,18 @@ class MyApp extends StatelessWidget {
       routes: {
         '/getStarted': (context) => GetStartedPage(),
         '/login': (context) => LoginPage(),
-        '/register': (context) => RegistrationPage(), // Add the RegistrationPage route
+        '/register': (context) => RegistrationPage(),
         '/resetPassword': (context) => ResetPasswordPage(),
         '/dashboard': (context) => GrievanceReviewStudentPage(),
         '/submit_grievance': (context) => SubmitGrievancePage(),
-        '/academic': (context) => AcademicPage(), // Create this page
-        '/administration': (context) => AdministrationPage(), // Create this page
-        '/disciplinary': (context) => DisciplinaryPage(), // Create this page
-        '/harassment': (context) => HarassmentPage(), // Create this page
+        '/academic': (context) => AcademicPage(),
+        '/administration': (context) => AdministrationPage(),
+        '/disciplinary': (context) => DisciplinaryPage(),
+        '/harassment': (context) => HarassmentPage(),
         '/notifications': (context) => NotificationPage(),
-        '/database': (context) => DatabasePage(), 
+        '/database': (context) => DatabasePage(),
       },
-      debugShowCheckedModeBanner: false, // This removes the debug banner globally
+      debugShowCheckedModeBanner: false,
     );
   }
 }

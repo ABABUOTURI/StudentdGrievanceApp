@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:hive/hive.dart';
+import 'package:intl/intl.dart'; // For date formatting
 import 'package:studentgrievanceapp/Models/grievance_submission.dart';
 
 class AcademicPage extends StatefulWidget {
@@ -20,7 +21,12 @@ class _AcademicPageState extends State<AcademicPage> {
 
   Future<void> _loadGrievances() async {
     grievanceBox = await Hive.openBox<GrievanceSubmission>('grievanceSubmissionBox');
-    grievances = grievanceBox!.values.where((g) => g.grievanceType == 'Academic').toList();
+
+    // Filter grievances of type "Academic"
+    grievances = grievanceBox!.values
+        .where((g) => g.grievanceType == 'Academic')
+        .toList();
+
     _sortGrievances(); // Sort grievances based on the default filter
     setState(() {});
   }
@@ -29,10 +35,10 @@ class _AcademicPageState extends State<AcademicPage> {
   void _sortGrievances() {
     switch (selectedFilter) {
       case 'Date':
-        grievances.sort((a, b) => b.timeline.compareTo(a.timeline));
+        grievances.sort((a, b) => b.submissionDate.compareTo(a.submissionDate));
         break;
       case 'Name':
-        grievances.sort((a, b) => a.commentFrom.compareTo(b.commentFrom));
+        grievances.sort((a, b) => a.name.compareTo(b.name));
         break;
       case 'Grievance ID':
         grievances.sort((a, b) => a.grievanceID.compareTo(b.grievanceID));
@@ -46,7 +52,12 @@ class _AcademicPageState extends State<AcademicPage> {
       appBar: AppBar(
         leading: IconButton(
           icon: Icon(Icons.arrow_back, color: Colors.white),
-          onPressed: () => Navigator.pop(context),
+          onPressed: () {
+            Navigator.pushReplacementNamed(
+              context,
+              '/dashboard', // Navigate to GrievanceReviewStudentPage
+            );
+          },
         ),
         title: Text(
           'Academic Grievances',
@@ -95,30 +106,28 @@ class _AcademicPageState extends State<AcademicPage> {
             ),
           ),
           Expanded(
-            child: SingleChildScrollView(
-              child: Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: grievances.isEmpty
-                    ? Center(
-                        child: Text(
-                          'No grievances available.',
-                          style: TextStyle(fontSize: 16),
-                        ),
-                      )
-                    : Column(
-                        children: grievances.map((grievance) {
-                          return GrievanceCard(
-                            grievanceType: grievance.grievanceType,
-                            timeline: grievance.timeline,
-                            commentFrom: grievance.commentFrom,
-                            comment: grievance.comment,
-                            grievanceID: grievance.grievanceID,
-                            status: grievance.status,
-                          );
-                        }).toList(),
-                      ),
-              ),
-            ),
+            child: grievances.isEmpty
+                ? Center(
+                    child: Text(
+                      'No grievances available.',
+                      style: TextStyle(fontSize: 16),
+                    ),
+                  )
+                : ListView.builder(
+                    padding: const EdgeInsets.all(16.0),
+                    itemCount: grievances.length,
+                    itemBuilder: (context, index) {
+                      final grievance = grievances[index];
+                      return GrievanceCard(
+                        grievanceType: grievance.grievanceType,
+                        submissionDate: grievance.submissionDate,
+                        name: grievance.name,
+                        description: grievance.description,
+                        grievanceID: grievance.grievanceID,
+                        status: grievance.status,
+                      );
+                    },
+                  ),
           ),
         ],
       ),
@@ -126,25 +135,28 @@ class _AcademicPageState extends State<AcademicPage> {
   }
 }
 
+// Card widget to display individual grievances
 class GrievanceCard extends StatelessWidget {
   final String grievanceType;
-  final String timeline;
-  final String commentFrom;
-  final String comment;
+  final DateTime submissionDate;
+  final String name;
+  final String description;
   final String grievanceID;
   final String status;
 
   const GrievanceCard({
     required this.grievanceType,
-    required this.timeline,
-    required this.commentFrom,
-    required this.comment,
+    required this.submissionDate,
+    required this.name,
+    required this.description,
     required this.grievanceID,
     required this.status,
   });
 
   @override
   Widget build(BuildContext context) {
+    String formattedDate = DateFormat('yyyy-MM-dd HH:mm').format(submissionDate);
+
     return Card(
       elevation: 4,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
@@ -159,17 +171,17 @@ class GrievanceCard extends StatelessWidget {
             ),
             SizedBox(height: 8),
             Text(
-              'Timeline: $timeline',
+              'Submission Date: $formattedDate',
               style: TextStyle(fontSize: 14),
             ),
             SizedBox(height: 8),
             Text(
-              'Comment From: $commentFrom',
+              'Submitted By: $name',
               style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
             ),
             SizedBox(height: 8),
             Text(
-              'Comment: $comment',
+              'Description: $description',
               style: TextStyle(fontSize: 14),
             ),
             SizedBox(height: 8),

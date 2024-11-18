@@ -69,13 +69,8 @@ class _GrievanceReviewStudentPageState extends State<GrievanceReviewStudentPage>
               ),
               SizedBox(height: 12),
 
-              // Display grievance progress based on data from Hive
-              _buildProgressCards(),
-
-              SizedBox(height: 20),
-
-              // Grievance type cards
-              _buildGrievanceTypeCards(context),
+              // Display grievance progress and buttons
+              _buildProgressGrid(),
 
               SizedBox(height: 20),
 
@@ -161,8 +156,8 @@ class _GrievanceReviewStudentPageState extends State<GrievanceReviewStudentPage>
     );
   }
 
-  // Build progress cards for grievances
-  Widget _buildProgressCards() {
+  // Build progress grid dynamically
+  Widget _buildProgressGrid() {
     if (grievanceBox == null) {
       return Center(child: CircularProgressIndicator());
     }
@@ -171,135 +166,65 @@ class _GrievanceReviewStudentPageState extends State<GrievanceReviewStudentPage>
       return Center(child: Text('No grievances available'));
     }
 
+    // Total number of grievances
+    int grievanceCount = grievanceBox!.length;
+
+    // Calculate progress percentages for each category
+    double progressAcademic = (grievanceBox!.values.where((g) => g.grievanceType == 'Academic').length / grievanceCount) * 100;
+    double progressAdministration = (grievanceBox!.values.where((g) => g.grievanceType == 'Administration').length / grievanceCount) * 100;
+    double progressDisciplinary = (grievanceBox!.values.where((g) => g.grievanceType == 'Disciplinary').length / grievanceCount) * 100;
+    double progressHarassment = (grievanceBox!.values.where((g) => g.grievanceType == 'Harassment').length / grievanceCount) * 100;
+
+    // Create a grid of progress bars and buttons
+    return GridView.count(
+      crossAxisCount: 2,
+      shrinkWrap: true,
+      physics: NeverScrollableScrollPhysics(),
+      crossAxisSpacing: 16.0,
+      mainAxisSpacing: 16.0,
+      children: [
+        _buildProgressRowWithButton('Academic', progressAcademic, '/academic'),
+        _buildProgressRowWithButton('Administration', progressAdministration, '/administration'),
+        _buildProgressRowWithButton('Disciplinary', progressDisciplinary, '/disciplinary'),
+        _buildProgressRowWithButton('Harassment', progressHarassment, '/harassment'),
+      ],
+    );
+  }
+
+  // Method to build progress rows with buttons
+  Widget _buildProgressRowWithButton(String title, double progressPercentage, String route) {
     return Card(
-      elevation: 2,
-      margin: EdgeInsets.all(8),
+      elevation: 4,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
       child: Padding(
         padding: const EdgeInsets.all(16.0),
-        child: GridView.count(
-          crossAxisCount: 2,
-          shrinkWrap: true,
-          physics: NeverScrollableScrollPhysics(),
-          childAspectRatio: 3.0,
-          children: grievanceBox!.values.map((grievance) {
-            // Adjusted for GrievanceSubmission model
-            return _buildProgressBar(grievance.grievanceType, grievance.grievanceID);
-          }).toList(),
-        ),
-      ),
-    );
-  }
-
-  // Build grievance type cards
-  Widget _buildGrievanceTypeCards(BuildContext context) {
-    return Container(
-      height: 500,
-      child: Card(
-        elevation: 2,
-        margin: EdgeInsets.all(8),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: GridView.count(
-            crossAxisCount: 2,
-            shrinkWrap: true,
-            physics: NeverScrollableScrollPhysics(),
-            padding: EdgeInsets.all(8.0),
-            children: [
-              _buildGrievanceCard(context, 'Academic'),
-              _buildGrievanceCard(context, 'Administration'),
-              _buildGrievanceCard(context, 'Disciplinary'),
-              _buildGrievanceCard(context, 'Harassment'),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  // Method to build individual progress bars (showing grievanceID as the unique identifier)
-  Widget _buildProgressBar(String grievanceType, String grievanceID) {
-    return Padding(
-      padding: const EdgeInsets.all(8.0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            grievanceType,
-            style: TextStyle(fontWeight: FontWeight.bold),
-          ),
-          SizedBox(height: 10),
-          Stack(
-            children: [
-              Container(
-                height: 20,
-                decoration: BoxDecoration(
-                  color: Color(0xFFFFC107),
-                  borderRadius: BorderRadius.circular(10),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              '$title - ${progressPercentage.toStringAsFixed(1)}%',
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
+            SizedBox(height: 10),
+            LinearProgressIndicator(
+              value: progressPercentage / 100,
+              backgroundColor: Colors.grey[300],
+              color: Color(0xFF082D74),
+            ),
+            SizedBox(height: 20),
+            Center(
+              child: ElevatedButton(
+                onPressed: () {
+                  Navigator.pushNamed(context, route);
+                },
+                style: ElevatedButton.styleFrom(
+                  foregroundColor: Colors.white,
+                  backgroundColor: Color(0xFF082D74),
                 ),
+                child: Text(title),
               ),
-              Container(
-                height: 20,
-                width: 150, // Example fixed width since progress isn't tracked here
-                decoration: BoxDecoration(
-                  color: Color(0xFF082D74),
-                  borderRadius: BorderRadius.circular(10),
-                ),
-              ),
-              Positioned.fill(
-                child: Center(
-                  child: Text(
-                    grievanceID,
-                    style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  // Method to build grievance type cards
-  Widget _buildGrievanceCard(BuildContext context, String title) {
-    return GestureDetector(
-      onTap: () {
-        switch (title) {
-          case 'Academic':
-            Navigator.pushNamed(context, '/academic');
-            break;
-          case 'Administration':
-            Navigator.pushNamed(context, '/administration');
-            break;
-          case 'Disciplinary':
-            Navigator.pushNamed(context, '/disciplinary');
-            break;
-          case 'Harassment':
-            Navigator.pushNamed(context, '/harassment');
-            break;
-        }
-      },
-      child: Card(
-        elevation: 2,
-        margin: EdgeInsets.all(8),
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            children: [
-              Text(
-                title,
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-              ),
-              SizedBox(height: 10),
-              Icon(
-                Icons.report_problem,
-                size: 40,
-                color: Colors.blue,
-              ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );

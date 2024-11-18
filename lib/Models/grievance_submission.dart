@@ -3,7 +3,7 @@ import 'package:hive/hive.dart';
 part 'grievance_submission.g.dart'; // Hive code generation file
 
 @HiveType(typeId: 1) // Unique TypeId for GrievanceSubmission
-class GrievanceSubmission {
+class GrievanceSubmission extends HiveObject {
   @HiveField(0)
   final String grievanceID;
 

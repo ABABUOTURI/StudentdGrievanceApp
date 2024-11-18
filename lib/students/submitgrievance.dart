@@ -12,9 +12,7 @@ class SubmitGrievancePage extends StatelessWidget {
         title: Text('Submit Grievance', style: TextStyle(color: Colors.white)),
         leading: IconButton(
           icon: Icon(Icons.arrow_back, color: Colors.white),
-          onPressed: () {
-            Navigator.pop(context); // Return to previous screen
-          },
+          onPressed: () => Navigator.pop(context),
         ),
         flexibleSpace: Container(
           decoration: BoxDecoration(
@@ -47,18 +45,16 @@ class _GrievanceFormBodyState extends State<GrievanceFormBody> {
   String? _selectedDocument;
   String? _selectedImage;
 
-  // Generate a unique tracking ID
   String _generateTrackingID() {
     var rng = Random();
     return 'GRV-${rng.nextInt(900000) + 100000}'; // Example format: GRV-123456
   }
 
-  // Save the grievance to Hive and show success alert
   Future<void> _submitForm() async {
     String trackingID = _generateTrackingID();
 
     var grievanceBox = await Hive.openBox<GrievanceSubmission>('grievanceSubmissionBox');
-    
+
     GrievanceSubmission newGrievance = GrievanceSubmission(
       grievanceID: trackingID,
       name: _nameController.text,
@@ -74,18 +70,26 @@ class _GrievanceFormBodyState extends State<GrievanceFormBody> {
     _showSuccessDialog(trackingID);
   }
 
-  // Show success alert dialog
   void _showSuccessDialog(String trackingID) {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text('Grievance Submitted'),
-        content: Text('Your grievance has been successfully submitted.\nTracking ID: $trackingID'),
+        title: Text('Success'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.check_circle, color: Colors.green, size: 50),
+            SizedBox(height: 10),
+            Text('Your grievance has been successfully submitted.'),
+            SizedBox(height: 10),
+            Text('Tracking ID: $trackingID', style: TextStyle(fontWeight: FontWeight.bold)),
+          ],
+        ),
         actions: [
           TextButton(
             onPressed: () {
-              Navigator.pop(context);
-              Navigator.pop(context, true); // Return to DatabasePage with success indication
+              Navigator.pop(context); // Close the dialog
+              Navigator.pop(context); // Return to the previous page
             },
             child: Text('OK'),
           ),
@@ -94,7 +98,6 @@ class _GrievanceFormBodyState extends State<GrievanceFormBody> {
     );
   }
 
-  // Pick a document
   Future<void> _pickDocument() async {
     FilePickerResult? result = await FilePicker.platform.pickFiles(type: FileType.any);
     if (result != null) {
@@ -104,7 +107,6 @@ class _GrievanceFormBodyState extends State<GrievanceFormBody> {
     }
   }
 
-  // Pick an image
   Future<void> _pickImage() async {
     FilePickerResult? result = await FilePicker.platform.pickFiles(type: FileType.image);
     if (result != null) {
@@ -139,9 +141,9 @@ class _GrievanceFormBodyState extends State<GrievanceFormBody> {
                 decoration: InputDecoration(labelText: 'Type of Grievance'),
                 items: [
                   DropdownMenuItem(child: Text('Academic'), value: 'Academic'),
-                  DropdownMenuItem(child: Text('Administrative'), value: 'Administrative'),
+                  DropdownMenuItem(child: Text('Administration'), value: 'Administrative'),
                   DropdownMenuItem(child: Text('Harassment'), value: 'Harassment'),
-                  DropdownMenuItem(child: Text('Other'), value: 'Other'),
+                  DropdownMenuItem(child: Text('Disciplinary'), value: 'Disciplinary'),
                 ],
                 onChanged: (value) {
                   setState(() {

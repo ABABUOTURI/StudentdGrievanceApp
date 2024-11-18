@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:hive/hive.dart';
+import 'package:intl/intl.dart'; // For date formatting
 import 'package:studentgrievanceapp/Models/grievance_submission.dart';
 
 class DisciplinaryPage extends StatefulWidget {
@@ -19,6 +20,7 @@ class _DisciplinaryPageState extends State<DisciplinaryPage> {
   }
 
   Future<void> _loadDisciplinaryCases() async {
+    // Load grievances of type "Disciplinary" from Hive box
     grievanceBox = await Hive.openBox<GrievanceSubmission>('grievanceSubmissionBox');
     disciplinaryCases = grievanceBox!.values
         .where((g) => g.grievanceType == 'Disciplinary')
@@ -31,10 +33,10 @@ class _DisciplinaryPageState extends State<DisciplinaryPage> {
   void _sortCases() {
     switch (selectedFilter) {
       case 'Date':
-        disciplinaryCases.sort((a, b) => b.timeline.compareTo(a.timeline));
+        disciplinaryCases.sort((a, b) => b.submissionDate.compareTo(a.submissionDate));
         break;
       case 'Name':
-        disciplinaryCases.sort((a, b) => a.commentFrom.compareTo(b.commentFrom));
+        disciplinaryCases.sort((a, b) => a.name.compareTo(b.name));
         break;
       case 'Case ID':
         disciplinaryCases.sort((a, b) => a.grievanceID.compareTo(b.grievanceID));
@@ -48,7 +50,12 @@ class _DisciplinaryPageState extends State<DisciplinaryPage> {
       appBar: AppBar(
         leading: IconButton(
           icon: Icon(Icons.arrow_back, color: Colors.white),
-          onPressed: () => Navigator.pop(context),
+          onPressed: () {
+            Navigator.pushReplacementNamed(
+              context,
+              '/dashboard', // Navigate to GrievanceReviewStudentPage
+            );
+          },
         ),
         title: Text(
           'Disciplinary Cases',
@@ -97,30 +104,28 @@ class _DisciplinaryPageState extends State<DisciplinaryPage> {
             ),
           ),
           Expanded(
-            child: SingleChildScrollView(
-              child: Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: disciplinaryCases.isEmpty
-                    ? Center(
-                        child: Text(
-                          'No disciplinary cases available.',
-                          style: TextStyle(fontSize: 16),
-                        ),
-                      )
-                    : Column(
-                        children: disciplinaryCases.map((caseItem) {
-                          return DisciplinaryCard(
-                            caseType: caseItem.grievanceType,
-                            timeline: caseItem.timeline,
-                            commentFrom: caseItem.commentFrom,
-                            comment: caseItem.comment,
-                            caseID: caseItem.grievanceID,
-                            status: caseItem.status,
-                          );
-                        }).toList(),
-                      ),
-              ),
-            ),
+            child: disciplinaryCases.isEmpty
+                ? Center(
+                    child: Text(
+                      'No disciplinary cases available.',
+                      style: TextStyle(fontSize: 16),
+                    ),
+                  )
+                : ListView.builder(
+                    padding: const EdgeInsets.all(16.0),
+                    itemCount: disciplinaryCases.length,
+                    itemBuilder: (context, index) {
+                      final caseItem = disciplinaryCases[index];
+                      return DisciplinaryCard(
+                        grievanceType: caseItem.grievanceType,
+                        submissionDate: caseItem.submissionDate,
+                        name: caseItem.name,
+                        description: caseItem.description,
+                        grievanceID: caseItem.grievanceID,
+                        status: caseItem.status, // Add status dynamically
+                      );
+                    },
+                  ),
           ),
         ],
       ),
@@ -129,24 +134,26 @@ class _DisciplinaryPageState extends State<DisciplinaryPage> {
 }
 
 class DisciplinaryCard extends StatelessWidget {
-  final String caseType;
-  final String timeline;
-  final String commentFrom;
-  final String comment;
-  final String caseID;
+  final String grievanceType;
+  final DateTime submissionDate;
+  final String name;
+  final String description;
+  final String grievanceID;
   final String status;
 
   const DisciplinaryCard({
-    required this.caseType,
-    required this.timeline,
-    required this.commentFrom,
-    required this.comment,
-    required this.caseID,
+    required this.grievanceType,
+    required this.submissionDate,
+    required this.name,
+    required this.description,
+    required this.grievanceID,
     required this.status,
   });
 
   @override
   Widget build(BuildContext context) {
+    String formattedDate = DateFormat('yyyy-MM-dd HH:mm').format(submissionDate);
+
     return Card(
       elevation: 4,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
@@ -156,27 +163,27 @@ class DisciplinaryCard extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Case Type: $caseType',
+              'Grievance Type: $grievanceType',
               style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
             ),
             SizedBox(height: 8),
             Text(
-              'Timeline: $timeline',
+              'Submission Date: $formattedDate',
               style: TextStyle(fontSize: 14),
             ),
             SizedBox(height: 8),
             Text(
-              'Comment From: $commentFrom',
+              'Submitted By: $name',
               style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
             ),
             SizedBox(height: 8),
             Text(
-              'Comment: $comment',
+              'Description: $description',
               style: TextStyle(fontSize: 14),
             ),
             SizedBox(height: 8),
             Text(
-              'Case ID: $caseID',
+              'Grievance ID: $grievanceID',
               style: TextStyle(fontSize: 14),
             ),
             SizedBox(height: 8),
