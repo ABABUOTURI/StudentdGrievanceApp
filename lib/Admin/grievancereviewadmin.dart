@@ -1,22 +1,38 @@
 import 'package:flutter/material.dart';
 import 'package:hive/hive.dart';
-import 'package:studentgrievanceapp/Models/grievance_submission.dart';
 import 'package:studentgrievanceapp/Admin/My_Database.dart';
+import 'package:studentgrievanceapp/Models/grievance_submission.dart';
+import 'package:intl/intl.dart'; // Add this import
 
 class GrievanceReviewAdminPage extends StatefulWidget {
   @override
-  _GrievanceReviewAdminPageState createState() => _GrievanceReviewAdminPageState();
+  _GrievanceReviewAdminPageState createState() =>
+      _GrievanceReviewAdminPageState();
 }
 
 class _GrievanceReviewAdminPageState extends State<GrievanceReviewAdminPage> {
-  String selectedCategory = 'Academic'; // Default category
-  Box<GrievanceSubmission>? grievanceBox; // Box to hold grievances
+  Box<GrievanceSubmission>? grievanceBox;
+  List<GrievanceSubmission> grievances = [];
+  List<GrievanceSubmission> filteredGrievances = [];
+
+  String selectedCategory = 'All'; // Default category filter
+  String selectedStatus = 'All'; // Default status filter
+  final _searchController = TextEditingController(); // Search field controller
 
   final grievanceCategories = [
+    'All',
     'Academic',
     'Disciplinary',
     'Harassment',
     'Administrative',
+  ];
+
+  final grievanceStatuses = [
+    'All',
+    'Submitted',
+    'In Progress',
+    'Resolved',
+    'Resubmission',
   ];
 
   @override
@@ -25,19 +41,24 @@ class _GrievanceReviewAdminPageState extends State<GrievanceReviewAdminPage> {
     _loadGrievances();
   }
 
-  // Method to load grievances from Hive
   Future<void> _loadGrievances() async {
     grievanceBox = await Hive.openBox<GrievanceSubmission>('grievanceSubmissionBox');
-    setState(() {}); // Trigger a UI refresh after loading data
+    grievances = grievanceBox!.values.toList();
+    _applyFilters();
   }
 
-  // Filter grievances based on the selected category and sort by latest
-  List<GrievanceSubmission> _getFilteredGrievances() {
-    if (grievanceBox == null) return [];
-    return grievanceBox!.values
-        .where((grievance) => grievance.grievanceType.contains(selectedCategory))
-        .toList()
+  void _applyFilters() {
+    setState(() {
+      filteredGrievances = grievances
+          .where((grievance) =>
+              (selectedCategory == 'All' || grievance.grievanceType == selectedCategory) &&
+              (selectedStatus == 'All' || grievance.status == selectedStatus) &&
+              (grievance.grievanceID
+                  .toLowerCase()
+                  .contains(_searchController.text.toLowerCase())))
+          .toList()
         ..sort((a, b) => b.submissionDate.compareTo(a.submissionDate)); // Sort by latest
+    });
   }
 
   @override
@@ -54,6 +75,16 @@ class _GrievanceReviewAdminPageState extends State<GrievanceReviewAdminPage> {
           ),
         ),
         title: Text('Grievance Review', style: TextStyle(color: Colors.white)),
+        leading: Builder(
+          builder: (context) {
+            return IconButton(
+              icon: Icon(Icons.menu, color: Colors.white),
+              onPressed: () {
+                Scaffold.of(context).openDrawer(); // Opens the drawer
+              },
+            );
+          },
+        ),
       ),
       drawer: Drawer(
         child: ListView(
@@ -70,17 +101,22 @@ class _GrievanceReviewAdminPageState extends State<GrievanceReviewAdminPage> {
               child: Text('Admin Menu', style: TextStyle(color: Colors.white, fontSize: 24)),
             ),
             ListTile(
-              leading: Icon(Icons.store),
-              title: Text('My Store'),
-              onTap: () {
-                Navigator.push(context, MaterialPageRoute(builder: (context) => DatabasePage()));
-              },
+        leading: Icon(Icons.store),
+        title: Text('My Store'),
+        onTap: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => DatabasePage(),
             ),
+          );
+        },
+      ),
             ListTile(
               leading: Icon(Icons.exit_to_app),
               title: Text('Logout'),
               onTap: () {
-                // Handle logout
+                // Perform logout
               },
             ),
           ],
@@ -89,12 +125,14 @@ class _GrievanceReviewAdminPageState extends State<GrievanceReviewAdminPage> {
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Search bar
+          // Search Field
           Padding(
             padding: const EdgeInsets.all(8.0),
             child: TextField(
+              controller: _searchController,
+              onChanged: (value) => _applyFilters(),
               decoration: InputDecoration(
-                hintText: 'Search Grievances...',
+                hintText: 'Search by Grievance ID...',
                 prefixIcon: Icon(Icons.search),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(10.0),
@@ -103,107 +141,148 @@ class _GrievanceReviewAdminPageState extends State<GrievanceReviewAdminPage> {
             ),
           ),
 
-          // Category buttons as text with underline on hover or selection
+          // Filters Section
           Padding(
-            padding: const EdgeInsets.all(8.0),
+            padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
             child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children: grievanceCategories.map((category) {
-                return GestureDetector(
-                  onTap: () {
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                // Category Filter Dropdown
+                DropdownButton<String>(
+                  value: selectedCategory,
+                  items: grievanceCategories
+                      .map((category) => DropdownMenuItem<String>(
+                            value: category,
+                            child: Text(category),
+                          ))
+                      .toList(),
+                  onChanged: (value) {
                     setState(() {
-                      selectedCategory = category;
+                      selectedCategory = value!;
+                      _applyFilters();
                     });
                   },
-                  child: MouseRegion(
-                    cursor: SystemMouseCursors.click,
-                    child: Text(
-                      category,
-                      style: TextStyle(
-                        fontSize: 16, // Smaller font size
-                        fontWeight: FontWeight.bold,
-                        decoration: selectedCategory == category
-                            ? TextDecoration.underline
-                            : TextDecoration.none,
-                        color: selectedCategory == category ? Colors.blue : Colors.grey,
-                      ),
-                    ),
-                  ),
-                );
-              }).toList(),
+                ),
+
+                // Status Filter Dropdown
+                DropdownButton<String>(
+                  value: selectedStatus,
+                  items: grievanceStatuses
+                      .map((status) => DropdownMenuItem<String>(
+                            value: status,
+                            child: Text(status),
+                          ))
+                      .toList(),
+                  onChanged: (value) {
+                    setState(() {
+                      selectedStatus = value!;
+                      _applyFilters();
+                    });
+                  },
+                ),
+              ],
             ),
           ),
 
-          // Title of the section
+          // Grievances Title
           Padding(
-            padding: const EdgeInsets.all(16.0),
+            padding: const EdgeInsets.all(8.0),
             child: Text(
-              '$selectedCategory Grievances',
+              'Filtered Grievances',
               style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
             ),
           ),
 
-          // Grievance List
+          // Display Grievances as Cards
           Expanded(
-            child: ListView.builder(
-              padding: EdgeInsets.all(8.0),
-              itemCount: _getFilteredGrievances().length,
-              itemBuilder: (context, index) {
-                final grievance = _getFilteredGrievances()[index];
-                return _buildGrievanceItem(context, grievance);
-              },
-            ),
+            child: filteredGrievances.isEmpty
+                ? Center(
+                    child: Text(
+                      'No grievances match your criteria.',
+                      style: TextStyle(fontSize: 16),
+                    ),
+                  )
+                : ListView.builder(
+                    padding: const EdgeInsets.all(8.0),
+                    itemCount: filteredGrievances.length,
+                    itemBuilder: (context, index) {
+                      final grievance = filteredGrievances[index];
+                      return _buildGrievanceCard(grievance);
+                    },
+                  ),
           ),
         ],
       ),
     );
   }
 
-  // Helper method to build a grievance item with action buttons
-  Widget _buildGrievanceItem(BuildContext context, GrievanceSubmission grievance) {
+  // Build each grievance card
+  Widget _buildGrievanceCard(GrievanceSubmission grievance) {
+    String formattedDate =
+        DateFormat('yyyy-MM-dd HH:mm').format(grievance.submissionDate);
+
     return Card(
-      margin: EdgeInsets.symmetric(vertical: 10.0),
-      elevation: 3,
+      margin: EdgeInsets.symmetric(vertical: 8.0),
+      elevation: 4,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
       child: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Grievance title and status
+            // Grievance Type and Status
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
                   grievance.grievanceType,
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                  ),
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                 ),
                 Chip(
                   label: Text(
-                    'Pending', // You can change this to dynamic status if needed
+                    grievance.status,
                     style: TextStyle(color: Colors.white),
                   ),
-                  backgroundColor: Colors.orange,
+                  backgroundColor: _getStatusColor(grievance.status),
                 ),
               ],
             ),
-            SizedBox(height: 10),
+            SizedBox(height: 8),
 
-            // View Details button
-            Align(
-              alignment: Alignment.centerRight,
-              child: ElevatedButton(
-                onPressed: () {
-                  _showGrievanceDetails(context, grievance);
-                },
-                style: ElevatedButton.styleFrom(
-                  padding: EdgeInsets.symmetric(horizontal: 20.0, vertical: 10.0),
-                  backgroundColor: Colors.blue,
+            // Grievance Details
+            Text(
+              'Submitted By: ${grievance.name ?? 'Anonymous'}',
+              style: TextStyle(fontSize: 14),
+            ),
+            SizedBox(height: 4),
+            Text(
+              'Submitted On: $formattedDate',
+              style: TextStyle(fontSize: 14),
+            ),
+            SizedBox(height: 4),
+            Text(
+              'Description: ${grievance.description}',
+              style: TextStyle(fontSize: 14),
+            ),
+            SizedBox(height: 4),
+            Text(
+              'Grievance ID: ${grievance.grievanceID}',
+              style: TextStyle(fontSize: 14),
+            ),
+            SizedBox(height: 16),
+
+            // Action Buttons
+            Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                ElevatedButton(
+                  onPressed: () {
+                    _showGrievanceDetails(grievance);
+                  },
+                  style: ElevatedButton.styleFrom(backgroundColor: Colors.blue),
+                  child: Text('View Details'),
                 ),
-                child: Text('View Details'),
-              ),
+              ],
             ),
           ],
         ),
@@ -211,8 +290,24 @@ class _GrievanceReviewAdminPageState extends State<GrievanceReviewAdminPage> {
     );
   }
 
-  // Method to show details of a grievance and allow admin actions
-  void _showGrievanceDetails(BuildContext context, GrievanceSubmission grievance) {
+  // Get color for the status chip
+  Color _getStatusColor(String status) {
+    switch (status) {
+      case 'Submitted':
+        return Colors.orange;
+      case 'In Progress':
+        return Colors.blue;
+      case 'Resolved':
+        return Colors.green;
+      case 'Resubmission':
+        return Colors.red;
+      default:
+        return Colors.grey;
+    }
+  }
+
+  // Show grievance details
+  void _showGrievanceDetails(GrievanceSubmission grievance) {
     showModalBottomSheet(
       context: context,
       builder: (BuildContext context) {
@@ -227,96 +322,15 @@ class _GrievanceReviewAdminPageState extends State<GrievanceReviewAdminPage> {
                 style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
               ),
               SizedBox(height: 10),
-              Text(
-                grievance.description,
-                style: TextStyle(fontSize: 16),
-              ),
+              Text(grievance.description),
               SizedBox(height: 10),
+              Text('Grievance ID: ${grievance.grievanceID}'),
               if (grievance.documentPath != null)
                 Text('Document: ${grievance.documentPath}'),
               if (grievance.imagePath != null)
                 Text('Image: ${grievance.imagePath}'),
-              SizedBox(height: 20),
-
-              // Action buttons for the admin
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  ElevatedButton(
-                    onPressed: () {
-                      Navigator.pop(context); // Close details and "approve"
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text('${grievance.grievanceID} Approved')),
-                      );
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.green,
-                    ),
-                    child: Text('Approve'),
-                  ),
-                  ElevatedButton(
-                    onPressed: () {
-                      Navigator.pop(context); // Close details and "reject"
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text('${grievance.grievanceID} Rejected')),
-                      );
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.red,
-                    ),
-                    child: Text('Reject'),
-                  ),
-                  ElevatedButton(
-                    onPressed: () {
-                      Navigator.pop(context); // Close details and comment
-                      _showCommentDialog(context);
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.blue,
-                    ),
-                    child: Text('Comment'),
-                  ),
-                ],
-              ),
             ],
           ),
-        );
-      },
-    );
-  }
-
-  // Method to show a dialog for admin comments
-  void _showCommentDialog(BuildContext context) {
-    TextEditingController _commentController = TextEditingController();
-
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: Text('Add a Comment'),
-          content: TextField(
-            controller: _commentController,
-            decoration: InputDecoration(hintText: 'Enter your comment'),
-            maxLines: 3,
-          ),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
-              child: Text('Cancel'),
-            ),
-            TextButton(
-              onPressed: () {
-                // Handle the comment submission
-                Navigator.of(context).pop();
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text('Comment submitted')),
-                );
-              },
-              child: Text('Submit'),
-            ),
-          ],
         );
       },
     );

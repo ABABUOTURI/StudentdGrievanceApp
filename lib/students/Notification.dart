@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:hive/hive.dart';
+import 'package:intl/intl.dart'; // For date formatting
 import 'package:studentgrievanceapp/Models/grievance_submission.dart';
 
 class NotificationPage extends StatefulWidget {
@@ -68,7 +69,10 @@ class _NotificationPageState extends State<NotificationPage> {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text('Filter By:', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                Text(
+                  'Filter By:',
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                ),
                 DropdownButton<String>(
                   value: selectedFilter,
                   items: ['All', 'Submitted', 'In Progress', 'Resolved']
@@ -90,26 +94,28 @@ class _NotificationPageState extends State<NotificationPage> {
           Expanded(
             child: notifications.isEmpty
                 ? Center(
-                    child: Text('No notifications available.', style: TextStyle(fontSize: 16)),
-                  )
-                : SingleChildScrollView(
-                    child: Padding(
-                      padding: const EdgeInsets.all(16.0),
-                      child: Column(
-                        children: notifications.map((notification) {
-                          return NotificationCard(
-                            type: notification.grievanceType,
-                            detail: notification.description,
-                            submittedOn: notification.submissionDate.toString(),
-                            resolvedOn: notification.status == 'Resolved'
-                                ? notification.resolutionDate?.toString() ?? ''
-                                : '',
-                            status: notification.status,
-                            grievanceID: notification.grievanceID,
-                          );
-                        }).toList(),
-                      ),
+                    child: Text(
+                      'No notifications available.',
+                      style: TextStyle(fontSize: 16),
                     ),
+                  )
+                : ListView.builder(
+                    padding: const EdgeInsets.all(16.0),
+                    itemCount: notifications.length,
+                    itemBuilder: (context, index) {
+                      final notification = notifications[index];
+                      return NotificationCard(
+                        grievanceType: notification.grievanceType,
+                        submissionDate: notification.submissionDate,
+                        name: notification.name ?? 'Anonymous', // Default if name is null
+                        description: notification.description,
+                        grievanceID: notification.grievanceID,
+                        status: notification.status,
+                        resolutionDate: notification.status == 'Resolved'
+                            ? notification.resolutionDate
+                            : null,
+                      );
+                    },
                   ),
           ),
         ],
@@ -118,25 +124,32 @@ class _NotificationPageState extends State<NotificationPage> {
   }
 }
 
+// Card widget to display individual notifications
 class NotificationCard extends StatelessWidget {
-  final String type;
-  final String detail;
-  final String submittedOn;
-  final String resolvedOn;
-  final String status;
+  final String grievanceType;
+  final DateTime submissionDate;
+  final String name;
+  final String description;
   final String grievanceID;
+  final String status;
+  final DateTime? resolutionDate;
 
   const NotificationCard({
-    required this.type,
-    required this.detail,
-    required this.submittedOn,
-    required this.resolvedOn,
-    required this.status,
+    required this.grievanceType,
+    required this.submissionDate,
+    required this.name,
+    required this.description,
     required this.grievanceID,
+    required this.status,
+    this.resolutionDate,
   });
 
   @override
   Widget build(BuildContext context) {
+    String formattedSubmissionDate = DateFormat('yyyy-MM-dd HH:mm').format(submissionDate);
+    String formattedResolutionDate =
+        resolutionDate != null ? DateFormat('yyyy-MM-dd HH:mm').format(resolutionDate!) : '';
+
     return Card(
       elevation: 4,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
@@ -146,36 +159,41 @@ class NotificationCard extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Type: $type',
+              'Grievance Type: $grievanceType',
               style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
             ),
             SizedBox(height: 8),
             Text(
-              'Detail: $detail',
-              style: TextStyle(fontSize: 14),
+              'Submitted By: $name',
+              style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
             ),
             SizedBox(height: 8),
             Text(
-              'Submitted On: $submittedOn',
+              'Submission Date: $formattedSubmissionDate',
               style: TextStyle(fontSize: 14),
             ),
-            if (resolvedOn.isNotEmpty)
+            if (resolutionDate != null)
               Padding(
                 padding: const EdgeInsets.only(top: 8.0),
                 child: Text(
-                  'Resolved On: $resolvedOn',
+                  'Resolved On: $formattedResolutionDate',
                   style: TextStyle(fontSize: 14),
                 ),
               ),
             SizedBox(height: 8),
             Text(
-              'Status: $status',
-              style: TextStyle(fontSize: 14, color: Colors.blue),
+              'Description: $description',
+              style: TextStyle(fontSize: 14),
             ),
             SizedBox(height: 8),
             Text(
               'Grievance ID: $grievanceID',
               style: TextStyle(fontSize: 14),
+            ),
+            SizedBox(height: 8),
+            Text(
+              'Status: $status',
+              style: TextStyle(fontSize: 14, color: Colors.blue),
             ),
           ],
         ),

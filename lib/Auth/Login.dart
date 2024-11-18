@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:hive/hive.dart';
 import 'package:studentgrievanceapp/Admin/grievancereviewadmin.dart';
+import 'package:studentgrievanceapp/Depart/grievancereviewdep.dart';
 import 'package:studentgrievanceapp/Models/user.dart';
 import 'package:studentgrievanceapp/students/grievancereviewstud.dart';
 import 'package:studentgrievanceapp/students/submitgrievance.dart';
@@ -69,7 +70,7 @@ class _LoginPageState extends State<LoginPage> {
       } else if (loggedInUser.role == 'Department Member') {
         Navigator.push(
           context,
-          MaterialPageRoute(builder: (context) => SubmitGrievancePage()), // Replace with the department page
+          MaterialPageRoute(builder: (context) => GrievanceReviewDepartPage()), // Replace with the department page
         );
       } else if (loggedInUser.role == 'Admin') {
         Navigator.push(
