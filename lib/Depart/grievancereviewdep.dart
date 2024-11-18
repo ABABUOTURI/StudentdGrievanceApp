@@ -1,27 +1,47 @@
 import 'package:flutter/material.dart';
 
 class GrievanceReviewDepartPage extends StatelessWidget {
+  // Mock data for real-time progress
+  final Map<String, double> grievanceProgress = {
+    'Academic': 0.75, // 75% progress
+    'Administration': 0.50, // 50% progress
+    'Disciplinary': 0.25, // 25% progress
+    'Harassment': 0.90, // 90% progress
+  };
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: Colors.blue,
+        automaticallyImplyLeading: false,
+        flexibleSpace: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [Color(0xFFFFC107), Color(0xFF082D74)],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+          ),
+        ),
         title: Row(
           children: [
-            IconButton(
-              icon: Icon(Icons.menu),
-              onPressed: () {
-                // Implement drawer or sidebar functionality if needed
-              },
+            Builder(
+              builder: (context) => IconButton(
+                icon: Icon(Icons.menu, color: Colors.white),
+                onPressed: () {
+                  Scaffold.of(context).openDrawer();
+                },
+              ),
             ),
             Expanded(
               child: Text(
                 'Grievance Review',
                 textAlign: TextAlign.center,
+                style: TextStyle(color: Colors.white),
               ),
             ),
             IconButton(
-              icon: Icon(Icons.search),
+              icon: Icon(Icons.search, color: Colors.white),
               onPressed: () {
                 // Implement search functionality
               },
@@ -32,134 +52,150 @@ class GrievanceReviewDepartPage extends StatelessWidget {
           ],
         ),
       ),
-      body: Container(
-        color: Colors.white,
-        padding: EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.center,
+      drawer: Drawer(
+        child: ListView(
+          padding: EdgeInsets.zero,
           children: [
-            // Title at the center
-            Text(
-              'Grievance Progress',
-              style: TextStyle(
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            SizedBox(height: 20),
-
-            // Progress bars in 2 columns, 2 rows
-            GridView.count(
-              crossAxisCount: 2,
-              shrinkWrap: true,
-              children: [
-                _buildProgressBar('Academic Progress'),
-                _buildProgressBar('Administration Progress'),
-                _buildProgressBar('Disciplinary Progress'),
-                _buildProgressBar('Harassment Progress'),
-              ],
-            ),
-            SizedBox(height: 20),
-
-            // Container for cards arranged in 2 columns and 2 rows
-            Container(
-              child: GridView.count(
-                crossAxisCount: 2,
-                shrinkWrap: true,
-                children: [
-                  _buildGrievanceCard('Academic'),
-                  _buildGrievanceCard('Administration'),
-                  _buildGrievanceCard('Disciplinary'),
-                  _buildGrievanceCard('Harassment'),
-                ],
-              ),
-            ),
-            SizedBox(height: 20),
-
-            // Title for buttons
-            Text(
-              'Actions',
-              style: TextStyle(
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            SizedBox(height: 20),
-
-            // Submit New Grievance & Comment buttons
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                ElevatedButton(
-                  onPressed: () {
-                    // Implement submit new grievance functionality
-                  },
-                  style: ElevatedButton.styleFrom(
-                    padding: EdgeInsets.symmetric(horizontal: 20.0, vertical: 10.0),
-                    backgroundColor: Colors.blue,
-                  ),
-                  child: Text('Submit New Grievance'),
+            DrawerHeader(
+              decoration: BoxDecoration(color: Color(0xFF082D74)),
+              child: Center(
+                child: Text(
+                  'Menu',
+                  style: TextStyle(color: Colors.white, fontSize: 24),
                 ),
-                SizedBox(width: 20),
-                ElevatedButton(
-                  onPressed: () {
-                    // Implement comment functionality
-                  },
-                  style: ElevatedButton.styleFrom(
-                    padding: EdgeInsets.symmetric(horizontal: 20.0, vertical: 10.0),
-                    backgroundColor: Colors.blue,
-                  ),
-                  child: Text('Comment'),
-                ),
-              ],
+              ),
+            ),
+            ListTile(
+              leading: Icon(Icons.notifications, color: Colors.blue),
+              title: Text('Notifications'),
+              onTap: () {
+                Navigator.pushNamed(context, '/notifications'); // Navigate to notifications page
+              },
+            ),
+            ListTile(
+              leading: Icon(Icons.account_circle, color: Colors.blue),
+              title: Text('Profile'),
+              onTap: () {
+                // Implement profile functionality
+              },
+            ),
+            ListTile(
+              leading: Icon(Icons.settings, color: Colors.blue),
+              title: Text('Settings'),
+              onTap: () {
+                // Implement settings functionality
+              },
+            ),
+            ListTile(
+              leading: Icon(Icons.logout, color: Colors.blue),
+              title: Text('Logout'),
+              onTap: () {
+                // Implement logout functionality
+              },
             ),
           ],
+        ),
+      ),
+      body: SingleChildScrollView(
+        child: Container(
+          color: Colors.white,
+          padding: EdgeInsets.all(16.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              // Title at the center
+              Text(
+                'Grievance Progress Overview',
+                style: TextStyle(
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF082D74),
+                ),
+              ),
+              SizedBox(height: 20),
+
+              // Progress Card
+              _buildGrievanceProgressCard(context),
+
+              SizedBox(height: 20),
+            ],
+          ),
         ),
       ),
     );
   }
 
-  // Helper method to build progress bars
-  Widget _buildProgressBar(String title) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          title,
-          style: TextStyle(fontWeight: FontWeight.bold),
-        ),
-        SizedBox(height: 10),
-        LinearProgressIndicator(
-          value: 0.7, // This would represent the current progress (customize as needed)
-          backgroundColor: Colors.grey[200],
-          color: Colors.blue,
-        ),
-        SizedBox(height: 20),
-      ],
-    );
-  }
-
-  // Helper method to build grievance cards
-  Widget _buildGrievanceCard(String title) {
+  // Helper method to build grievance progress card
+  Widget _buildGrievanceProgressCard(BuildContext context) {
     return Card(
-      elevation: 2,
-      margin: EdgeInsets.all(8),
+      elevation: 4,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
       child: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              title,
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
+            // Display progress bars for each grievance type
+            for (var entry in grievanceProgress.entries) ...[
+              Text(
+                '${entry.key} Progress: ${(entry.value * 100).toStringAsFixed(0)}%',
+                style: TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF082D74)),
               ),
+              SizedBox(height: 10),
+              LinearProgressIndicator(
+                value: entry.value, // Progress percentage
+                backgroundColor: Colors.grey[300],
+                color: Color(0xFF082D74),
+              ),
+              SizedBox(height: 20),
+            ],
+            Divider(color: Colors.grey),
+
+            // Buttons for each grievance type
+            Text(
+              'Explore Grievances:',
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF082D74)),
             ),
             SizedBox(height: 10),
-            Icon(
-              Icons.report_problem,
-              size: 40,
-              color: Colors.blue,
+
+            // Horizontal scrollable row of buttons
+            SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Row(
+                children: [
+                  ElevatedButton(
+                    onPressed: () {
+                      Navigator.pushNamed(context, '/academic'); // Navigate to Academic Page
+                    },
+                    style: ElevatedButton.styleFrom(backgroundColor: Color(0xFF082D74)),
+                    child: Text('Academic', style: TextStyle(color: Color(0xFFFFC107))),
+                  ),
+                  SizedBox(width: 10), // Spacing between buttons
+                  ElevatedButton(
+                    onPressed: () {
+                      Navigator.pushNamed(context, '/administration'); // Navigate to Administration Page
+                    },
+                    style: ElevatedButton.styleFrom(backgroundColor: Color(0xFF082D74)),
+                    child: Text('Administration', style: TextStyle(color: Color(0xFFFFC107))),
+                  ),
+                  SizedBox(width: 10),
+                  ElevatedButton(
+                    onPressed: () {
+                      Navigator.pushNamed(context, '/disciplinary'); // Navigate to Disciplinary Page
+                    },
+                    style: ElevatedButton.styleFrom(backgroundColor: Color(0xFF082D74)),
+                    child: Text('Disciplinary', style: TextStyle(color: Color(0xFFFFC107))),
+                  ),
+                  SizedBox(width: 10),
+                  ElevatedButton(
+                    onPressed: () {
+                      Navigator.pushNamed(context, '/harassment'); // Navigate to Harassment Page
+                    },
+                    style: ElevatedButton.styleFrom(backgroundColor: Color(0xFF082D74)),
+                    child: Text('Harassment', style: TextStyle(color: Color(0xFFFFC107))),
+                  ),
+                ],
+              ),
             ),
           ],
         ),
