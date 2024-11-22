@@ -38,6 +38,15 @@ class _NotificationPageState extends State<NotificationPage> {
     }
   }
 
+  // Function to update the status of a grievance and save it to the Hive box
+  void _sendNotificationToStudent(Map grievance, String status) {
+    grievance['status'] = status; // Update grievance status
+    grievanceBox?.put(grievance['grievanceID'], grievance as GrievanceSubmission); // Save the updated grievance in the box
+    setState(() {
+      _applyFilter(); // Reapply filter to reflect the change in the list
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -114,6 +123,14 @@ class _NotificationPageState extends State<NotificationPage> {
                         resolutionDate: notification.status == 'Resolved'
                             ? notification.resolutionDate
                             : null,
+                        // Add action to update the status
+                        onUpdateStatus: (status) {
+                          final updatedGrievance = {
+                            'grievanceID': notification.grievanceID,
+                            'status': status,
+                          };
+                          _sendNotificationToStudent(updatedGrievance, status);
+                        },
                       );
                     },
                   ),
@@ -133,6 +150,7 @@ class NotificationCard extends StatelessWidget {
   final String grievanceID;
   final String status;
   final DateTime? resolutionDate;
+  final Function(String) onUpdateStatus;
 
   const NotificationCard({
     required this.grievanceType,
@@ -142,6 +160,7 @@ class NotificationCard extends StatelessWidget {
     required this.grievanceID,
     required this.status,
     this.resolutionDate,
+    required this.onUpdateStatus,
   });
 
   @override
@@ -195,6 +214,12 @@ class NotificationCard extends StatelessWidget {
               'Status: $status',
               style: TextStyle(fontSize: 14, color: Colors.blue),
             ),
+            // Button to update status
+            if (status != 'Resolved')
+              ElevatedButton(
+                onPressed: () => onUpdateStatus('Resolved'),
+                child: Text('Mark as Resolved'),
+              ),
           ],
         ),
       ),

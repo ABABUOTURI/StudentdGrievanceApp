@@ -26,13 +26,15 @@ class GrievanceSubmissionAdapter extends TypeAdapter<GrievanceSubmission> {
       submissionDate: fields[6] as DateTime,
       status: fields[7] as String,
       resolutionDate: fields[8] as DateTime?,
+      assignedMember: fields[9], // Ensure this is read correctly
+      timestamp: fields[10] as DateTime, // Read the timestamp
     );
   }
 
   @override
   void write(BinaryWriter writer, GrievanceSubmission obj) {
     writer
-      ..writeByte(9)
+      ..writeByte(11) // Adjust the number of fields
       ..writeByte(0)
       ..write(obj.grievanceID)
       ..writeByte(1)
@@ -50,7 +52,11 @@ class GrievanceSubmissionAdapter extends TypeAdapter<GrievanceSubmission> {
       ..writeByte(7)
       ..write(obj.status)
       ..writeByte(8)
-      ..write(obj.resolutionDate);
+      ..write(obj.resolutionDate)
+      ..writeByte(9)
+      ..write(obj.assignedMember) // Ensure this is written correctly
+      ..writeByte(10)
+      ..write(obj.timestamp); // Write the timestamp
   }
 
   @override

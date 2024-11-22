@@ -56,14 +56,17 @@ class _GrievanceFormBodyState extends State<GrievanceFormBody> {
     var grievanceBox = await Hive.openBox<GrievanceSubmission>('grievanceSubmissionBox');
 
     GrievanceSubmission newGrievance = GrievanceSubmission(
-      grievanceID: trackingID,
-      name: _nameController.text,
-      grievanceType: grievanceType,
-      description: _descriptionController.text,
-      documentPath: _selectedDocument,
-      imagePath: _selectedImage,
-      submissionDate: DateTime.now(),
-    );
+  grievanceID: trackingID,
+  name: _nameController.text,
+  grievanceType: grievanceType,
+  description: _descriptionController.text,
+  documentPath: _selectedDocument,
+  imagePath: _selectedImage,
+  submissionDate: DateTime.now(),
+  assignedMember: 'Unassigned', // Default value
+  timestamp: DateTime.now(), // Default value
+);
+
 
     await grievanceBox.add(newGrievance);
 

@@ -37,6 +37,12 @@ class GrievanceSubmission extends HiveObject {
 
   var comment;
 
+  var title;
+
+  var timestamp;
+
+  String? assignedMember;
+
 
   GrievanceSubmission({
     required this.grievanceID,
@@ -47,6 +53,6 @@ class GrievanceSubmission extends HiveObject {
     this.imagePath,
     required this.submissionDate,
     this.status = "Submitted", // Default status
-    this.resolutionDate,
+    this.resolutionDate, required assignedMember, required DateTime timestamp,
   });
 }

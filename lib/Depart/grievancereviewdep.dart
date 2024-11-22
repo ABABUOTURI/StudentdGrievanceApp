@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:studentgrievanceapp/Depart/DepartNotification.dart';
 
 class GrievanceReviewDepartPage extends StatelessWidget {
   // Mock data for real-time progress
@@ -65,13 +66,18 @@ class GrievanceReviewDepartPage extends StatelessWidget {
                 ),
               ),
             ),
-            ListTile(
-              leading: Icon(Icons.notifications, color: Colors.blue),
-              title: Text('Notifications'),
-              onTap: () {
-                Navigator.pushNamed(context, '/notifications'); // Navigate to notifications page
-              },
-            ),
+           ListTile(
+  leading: Icon(Icons.notifications, color: Colors.blue),
+  title: Text('Notifications'),
+  onTap: () {
+    // Navigate directly to the DepartNotificationPage
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => DepartNotificationPage()), // Directly create an instance of the page
+    );
+  },
+),
+
             ListTile(
               leading: Icon(Icons.account_circle, color: Colors.blue),
               title: Text('Profile'),
