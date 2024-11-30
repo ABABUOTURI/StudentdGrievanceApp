@@ -26,15 +26,16 @@ class GrievanceSubmissionAdapter extends TypeAdapter<GrievanceSubmission> {
       submissionDate: fields[6] as DateTime,
       status: fields[7] as String,
       resolutionDate: fields[8] as DateTime?,
-      assignedMember: fields[9], // Ensure this is read correctly
-      timestamp: fields[10] as DateTime, // Read the timestamp
+      assignedMember: fields[9] as String?,
+      comments: (fields[10] as List).cast<Comment>(),
+      timestamp: fields[11] as DateTime?,
     );
   }
 
   @override
   void write(BinaryWriter writer, GrievanceSubmission obj) {
     writer
-      ..writeByte(11) // Adjust the number of fields
+      ..writeByte(12)
       ..writeByte(0)
       ..write(obj.grievanceID)
       ..writeByte(1)
@@ -54,9 +55,11 @@ class GrievanceSubmissionAdapter extends TypeAdapter<GrievanceSubmission> {
       ..writeByte(8)
       ..write(obj.resolutionDate)
       ..writeByte(9)
-      ..write(obj.assignedMember) // Ensure this is written correctly
+      ..write(obj.assignedMember)
       ..writeByte(10)
-      ..write(obj.timestamp); // Write the timestamp
+      ..write(obj.comments)
+      ..writeByte(11)
+      ..write(obj.timestamp);
   }
 
   @override
@@ -66,6 +69,43 @@ class GrievanceSubmissionAdapter extends TypeAdapter<GrievanceSubmission> {
   bool operator ==(Object other) =>
       identical(this, other) ||
       other is GrievanceSubmissionAdapter &&
+          runtimeType == other.runtimeType &&
+          typeId == other.typeId;
+}
+
+class CommentAdapter extends TypeAdapter<Comment> {
+  @override
+  final int typeId = 2;
+
+  @override
+  Comment read(BinaryReader reader) {
+    final numOfFields = reader.readByte();
+    final fields = <int, dynamic>{
+      for (int i = 0; i < numOfFields; i++) reader.readByte(): reader.read(),
+    };
+    return Comment(
+      message: fields[0] as String,
+      timestamp: fields[1] as DateTime,
+    );
+  }
+
+  @override
+  void write(BinaryWriter writer, Comment obj) {
+    writer
+      ..writeByte(2)
+      ..writeByte(0)
+      ..write(obj.message)
+      ..writeByte(1)
+      ..write(obj.timestamp);
+  }
+
+  @override
+  int get hashCode => typeId.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is CommentAdapter &&
           runtimeType == other.runtimeType &&
           typeId == other.typeId;
 }

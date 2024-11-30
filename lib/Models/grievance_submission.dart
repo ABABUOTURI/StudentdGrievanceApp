@@ -14,35 +14,31 @@ class GrievanceSubmission extends HiveObject {
   final String grievanceType;
 
   @HiveField(3)
-  final String description;
+  String description; // Change to String to update it dynamically
 
   @HiveField(4)
-  final String? documentPath; // Optional document path
+  final String? documentPath;
 
   @HiveField(5)
-  final String? imagePath; // Optional image path
+  final String? imagePath;
 
   @HiveField(6)
   final DateTime submissionDate;
 
-   @HiveField(7)
-  final String status; // Example statuses: Submitted, In Progress, Resolved
+  @HiveField(7)
+  final String status;
 
   @HiveField(8)
   final DateTime? resolutionDate;
 
-  var commentFrom;
+  @HiveField(9)
+  final String? assignedMember;
 
-  var timeline;
+  @HiveField(10)
+  final List<Comment> comments;
 
-  var comment;
-
-  var title;
-
-  var timestamp;
-
-  String? assignedMember;
-
+  @HiveField(11) // New Hive field for timestamp
+  final DateTime? timestamp; // Nullable DateTime
 
   GrievanceSubmission({
     required this.grievanceID,
@@ -52,7 +48,31 @@ class GrievanceSubmission extends HiveObject {
     this.documentPath,
     this.imagePath,
     required this.submissionDate,
-    this.status = "Submitted", // Default status
-    this.resolutionDate, required assignedMember, required DateTime timestamp,
+    this.status = "Submitted",
+    this.resolutionDate,
+    this.assignedMember,
+    this.comments = const [],
+    this.timestamp, // Nullable
+  });
+
+  // Method to add a new comment (message) to the grievance
+  void addMessage(String newMessage) {
+    description += '\n$newMessage'; // Append the new message to the description
+    comments.add(Comment(message: newMessage, timestamp: DateTime.now())); // Save the message as a comment
+  }
+}
+
+// Comment class to store individual comments/messages
+@HiveType(typeId: 2)
+class Comment {
+  @HiveField(0)
+  final String message;
+
+  @HiveField(1)
+  final DateTime timestamp;
+
+  Comment({
+    required this.message,
+    required this.timestamp,
   });
 }

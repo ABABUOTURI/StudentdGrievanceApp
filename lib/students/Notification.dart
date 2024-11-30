@@ -11,7 +11,7 @@ class NotificationPage extends StatefulWidget {
 class _NotificationPageState extends State<NotificationPage> {
   Box<GrievanceSubmission>? grievanceBox;
   List<GrievanceSubmission> notifications = [];
-  String selectedFilter = 'All'; // Default filter option
+  String selectedFilter = 'All';
 
   @override
   void initState() {
@@ -20,30 +20,28 @@ class _NotificationPageState extends State<NotificationPage> {
   }
 
   Future<void> _loadNotifications() async {
-    grievanceBox = await Hive.openBox<GrievanceSubmission>('grievanceSubmissionBox');
-    setState(() {
-      notifications = grievanceBox!.values.toList();
-      _applyFilter(); // Apply the default filter on load
-    });
-  }
-
-  // Apply selected filter to notifications
-  void _applyFilter() {
-    if (selectedFilter == 'All') {
-      notifications = grievanceBox!.values.toList();
-    } else {
-      notifications = grievanceBox!.values
-          .where((g) => g.status == selectedFilter)
-          .toList();
+    try {
+      grievanceBox = await Hive.openBox<GrievanceSubmission>('grievanceSubmissionBox');
+      if (grievanceBox != null) {
+        setState(() {
+          notifications = grievanceBox!.values.toList();
+          _applyFilter();
+        });
+      }
+    } catch (e) {
+      print('Error loading notifications: $e');
     }
   }
 
-  // Function to update the status of a grievance and save it to the Hive box
-  void _sendNotificationToStudent(Map grievance, String status) {
-    grievance['status'] = status; // Update grievance status
-    grievanceBox?.put(grievance['grievanceID'], grievance as GrievanceSubmission); // Save the updated grievance in the box
+  void _applyFilter() {
     setState(() {
-      _applyFilter(); // Reapply filter to reflect the change in the list
+      if (selectedFilter == 'All') {
+        notifications = grievanceBox!.values.toList();
+      } else {
+        notifications = grievanceBox!.values
+            .where((g) => g.status == selectedFilter)
+            .toList();
+      }
     });
   }
 
@@ -53,12 +51,9 @@ class _NotificationPageState extends State<NotificationPage> {
       appBar: AppBar(
         leading: IconButton(
           icon: Icon(Icons.arrow_back, color: Colors.white),
-          onPressed: () => Navigator.pushNamed(context, '/dashboard'), // Navigate back to dashboard
+          onPressed: () => Navigator.pushNamed(context, '/dashboard'),
         ),
-        title: Text(
-          'Notifications',
-          style: TextStyle(color: Colors.white),
-        ),
+        title: Text('Notifications', style: TextStyle(color: Colors.white)),
         flexibleSpace: Container(
           decoration: BoxDecoration(
             gradient: LinearGradient(
@@ -72,19 +67,15 @@ class _NotificationPageState extends State<NotificationPage> {
       backgroundColor: Colors.white,
       body: Column(
         children: [
-          // Filter dropdown
           Padding(
             padding: const EdgeInsets.all(16.0),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text(
-                  'Filter By:',
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                ),
+                Text('Filter By:', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
                 DropdownButton<String>(
                   value: selectedFilter,
-                  items: ['All', 'Submitted', 'In Progress', 'Resolved']
+                  items: ['All', 'Submitted', 'In Progress', 'Resolved', 'Resubmitted']
                       .map((filter) => DropdownMenuItem<String>(
                             value: filter,
                             child: Text(filter),
@@ -93,7 +84,7 @@ class _NotificationPageState extends State<NotificationPage> {
                   onChanged: (value) {
                     setState(() {
                       selectedFilter = value!;
-                      _applyFilter(); // Filter notifications based on selected option
+                      _applyFilter();
                     });
                   },
                 ),
@@ -102,12 +93,7 @@ class _NotificationPageState extends State<NotificationPage> {
           ),
           Expanded(
             child: notifications.isEmpty
-                ? Center(
-                    child: Text(
-                      'No notifications available.',
-                      style: TextStyle(fontSize: 16),
-                    ),
-                  )
+                ? Center(child: Text('No notifications available.', style: TextStyle(fontSize: 16)))
                 : ListView.builder(
                     padding: const EdgeInsets.all(16.0),
                     itemCount: notifications.length,
@@ -116,21 +102,12 @@ class _NotificationPageState extends State<NotificationPage> {
                       return NotificationCard(
                         grievanceType: notification.grievanceType,
                         submissionDate: notification.submissionDate,
-                        name: notification.name ?? 'Anonymous', // Default if name is null
+                        name: notification.name,
                         description: notification.description,
                         grievanceID: notification.grievanceID,
                         status: notification.status,
-                        resolutionDate: notification.status == 'Resolved'
-                            ? notification.resolutionDate
-                            : null,
-                        // Add action to update the status
-                        onUpdateStatus: (status) {
-                          final updatedGrievance = {
-                            'grievanceID': notification.grievanceID,
-                            'status': status,
-                          };
-                          _sendNotificationToStudent(updatedGrievance, status);
-                        },
+                        resolutionDate: notification.status == 'Resolved' ? notification.resolutionDate : null,
+                        comments: _getCommentsForStatus(notification.status),
                       );
                     },
                   ),
@@ -139,9 +116,24 @@ class _NotificationPageState extends State<NotificationPage> {
       ),
     );
   }
+
+  // Returns sample comments based on status
+  List<String> _getCommentsForStatus(String status) {
+    switch (status) {
+      case 'Submitted':
+        return ["Your grievance has been submitted and is under review."];
+      case 'In Progress':
+        return ["The department is working on resolving your grievance."];
+      case 'Resolved':
+        return ["Your grievance has been resolved. Please check the resolution details."];
+      case 'Resubmitted':
+        return ["The grievance has been resubmitted for further review."];
+      default:
+        return [];
+    }
+  }
 }
 
-// Card widget to display individual notifications
 class NotificationCard extends StatelessWidget {
   final String grievanceType;
   final DateTime submissionDate;
@@ -150,7 +142,7 @@ class NotificationCard extends StatelessWidget {
   final String grievanceID;
   final String status;
   final DateTime? resolutionDate;
-  final Function(String) onUpdateStatus;
+  final List<String> comments;
 
   const NotificationCard({
     required this.grievanceType,
@@ -160,7 +152,7 @@ class NotificationCard extends StatelessWidget {
     required this.grievanceID,
     required this.status,
     this.resolutionDate,
-    required this.onUpdateStatus,
+    required this.comments,
   });
 
   @override
@@ -177,48 +169,28 @@ class NotificationCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              'Grievance Type: $grievanceType',
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-            ),
+            Text('Grievance Type: $grievanceType', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
             SizedBox(height: 8),
-            Text(
-              'Submitted By: $name',
-              style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
-            ),
+            Text('Submitted By: $name', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
             SizedBox(height: 8),
-            Text(
-              'Submission Date: $formattedSubmissionDate',
-              style: TextStyle(fontSize: 14),
-            ),
+            Text('Submission Date: $formattedSubmissionDate', style: TextStyle(fontSize: 14)),
             if (resolutionDate != null)
               Padding(
                 padding: const EdgeInsets.only(top: 8.0),
-                child: Text(
-                  'Resolved On: $formattedResolutionDate',
-                  style: TextStyle(fontSize: 14),
-                ),
+                child: Text('Resolved On: $formattedResolutionDate', style: TextStyle(fontSize: 14)),
               ),
             SizedBox(height: 8),
-            Text(
-              'Description: $description',
-              style: TextStyle(fontSize: 14),
-            ),
+            Text('Description: $description', style: TextStyle(fontSize: 14)),
             SizedBox(height: 8),
-            Text(
-              'Grievance ID: $grievanceID',
-              style: TextStyle(fontSize: 14),
-            ),
+            Text('Grievance ID: $grievanceID', style: TextStyle(fontSize: 14)),
             SizedBox(height: 8),
-            Text(
-              'Status: $status',
-              style: TextStyle(fontSize: 14, color: Colors.blue),
-            ),
-            // Button to update status
-            if (status != 'Resolved')
-              ElevatedButton(
-                onPressed: () => onUpdateStatus('Resolved'),
-                child: Text('Mark as Resolved'),
+            Text('Status: $status', style: TextStyle(fontSize: 14, color: Colors.blue)),
+            SizedBox(height: 16),
+            Text('Comments:', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+            for (var comment in comments)
+              Padding(
+                padding: const EdgeInsets.only(top: 8.0),
+                child: Text('- $comment', style: TextStyle(fontSize: 14, color: Colors.grey[600])),
               ),
           ],
         ),

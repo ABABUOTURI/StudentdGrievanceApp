@@ -121,6 +121,13 @@ class _AdministrationPageState extends State<AdministrationPage> {
                         name: grievance.name,
                         description: grievance.description,
                         grievanceID: grievance.grievanceID,
+                        status: grievance.status,
+                        onMessageSend: (newMessage) {
+                          // Update grievance description and save it to Hive
+                          grievance.description += '\n$newMessage';
+                          grievance.save(); // Save updated grievance
+                          setState(() {});
+                        },
                       );
                     },
                   ),
@@ -137,6 +144,8 @@ class GrievanceCard extends StatelessWidget {
   final String name;
   final String description;
   final String grievanceID;
+  final String status;
+  final Function(String) onMessageSend;
 
   const GrievanceCard({
     required this.grievanceType,
@@ -144,11 +153,14 @@ class GrievanceCard extends StatelessWidget {
     required this.name,
     required this.description,
     required this.grievanceID,
+    required this.status,
+    required this.onMessageSend,
   });
 
   @override
   Widget build(BuildContext context) {
     String formattedDate = DateFormat('yyyy-MM-dd HH:mm').format(submissionDate);
+
     return Card(
       elevation: 4,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
@@ -180,6 +192,56 @@ class GrievanceCard extends StatelessWidget {
             Text(
               'Grievance ID: $grievanceID',
               style: TextStyle(fontSize: 14),
+            ),
+            SizedBox(height: 8),
+            Text(
+              'Status: $status',
+              style: TextStyle(fontSize: 14, color: Colors.blue),
+            ),
+            Align(
+              alignment: Alignment.centerRight,
+              child: IconButton(
+                icon: Icon(Icons.message, color: Colors.blue),
+                onPressed: () {
+                  showDialog(
+                    context: context,
+                    builder: (context) {
+                      TextEditingController _messageController =
+                          TextEditingController();
+                      return AlertDialog(
+                        title: Text('Add Message'),
+                        content: TextField(
+                          controller: _messageController,
+                          decoration: InputDecoration(hintText: 'Enter your message'),
+                          maxLines: 3,
+                        ),
+                        actions: [
+                          TextButton(
+                            onPressed: () => Navigator.pop(context),
+                            child: Text('Cancel'),
+                          ),
+                          TextButton(
+                            onPressed: () {
+                              String message = _messageController.text;
+                              if (message.isNotEmpty) {
+                                // Send the message and save it in Hive
+                                onMessageSend(message);
+                                Navigator.pop(context);
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text('Message sent successfully'),
+                                  ),
+                                );
+                              }
+                            },
+                            child: Text('Send'),
+                          ),
+                        ],
+                      );
+                    },
+                  );
+                },
+              ),
             ),
           ],
         ),

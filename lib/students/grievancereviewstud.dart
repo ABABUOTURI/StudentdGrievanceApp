@@ -137,13 +137,13 @@ class _GrievanceReviewStudentPageState extends State<GrievanceReviewStudentPage>
               Navigator.pushNamed(context, '/submit_grievance');
             },
           ),
-          ListTile(
-            leading: Icon(Icons.receipt, color: Colors.blue),
-            title: Text('Receipts'),
-            onTap: () {
-              Navigator.pushNamed(context, '/page2');
-            },
-          ),
+          //ListTile(
+            //leading: Icon(Icons.receipt, color: Colors.blue),
+            //title: Text('Receipts'),
+            //onTap: () {
+              //Navigator.pushNamed(context, '/page2');
+            //},
+          //),
           ListTile(
             leading: Icon(Icons.notifications, color: Colors.blue),
             title: Text('Notifications'),

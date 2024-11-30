@@ -183,13 +183,58 @@ class DisciplinaryCard extends StatelessWidget {
             ),
             SizedBox(height: 8),
             Text(
-              'Grievance ID: $grievanceID',
+              'Case ID: $grievanceID',
               style: TextStyle(fontSize: 14),
             ),
             SizedBox(height: 8),
             Text(
               'Status: $status',
               style: TextStyle(fontSize: 14, color: Colors.blue),
+            ),
+            Align(
+              alignment: Alignment.centerRight,
+              child: IconButton(
+                icon: Icon(Icons.message, color: Colors.blue),
+                onPressed: () {
+                  showDialog(
+                    context: context,
+                    builder: (context) {
+                      TextEditingController _messageController =
+                          TextEditingController();
+                      return AlertDialog(
+                        title: Text('Add Message'),
+                        content: TextField(
+                          controller: _messageController,
+                          decoration: InputDecoration(hintText: 'Enter your message'),
+                          maxLines: 3,
+                        ),
+                        actions: [
+                          TextButton(
+                            onPressed: () => Navigator.pop(context),
+                            child: Text('Cancel'),
+                          ),
+                          TextButton(
+                            onPressed: () {
+                              String message = _messageController.text;
+                              if (message.isNotEmpty) {
+                                // Send the message and save it in Hive
+                                // This part can be customized based on your logic
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text('Message sent successfully'),
+                                  ),
+                                );
+                                Navigator.pop(context);
+                              }
+                            },
+                            child: Text('Send'),
+                          ),
+                        ],
+                      );
+                    },
+                  );
+                },
+              ),
             ),
           ],
         ),
